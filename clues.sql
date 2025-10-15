@@ -26,6 +26,37 @@ AND countrylanguages.isofficial = TRUE;
 -- to a different country, a country where people speak only the language she was learning. Find 
 -- out which nearby country speaks nothing but that language.
 
+SELECT countries.name AS country, countrylanguages.language FROM countries
+JOIN countrylanguages ON countrylanguages.countrycode = countries.code
+WHERE countrylanguages.language = (
+    SELECT language2.language FROM countrylanguages language2
+    JOIN countries countries2 ON countries2.code = language2.countrycode 
+    WHERE countries2.continent = 'Europe' AND countries2.region = 'Southern Europe'
+    AND countries2.population = (
+        SELECT MIN(population) FROM countries WHERE continent = 'Europe' AND region = 'Southern Europe'
+    )
+    AND language2.isofficial = TRUE
+)
+AND countries.region = (
+    SELECT countries3.region FROM countries countries3 
+    WHERE countries3.continent = 'Europe' AND countries3.region = 'Southern Europe'
+    AND countries3.population = (
+        SELECT MIN(population) FROM countries WHERE continent = 'Europe' AND region = 'Southern Europe'
+    )
+)
+AND countries.code <> (
+    SELECT countries4.code FROM countries countries4 
+    WHERE countries4.continent = 'Europe' AND countries4.region = 'Southern Europe'
+    AND countries4.population = (
+        SELECT MIN(population) FROM countries WHERE continent = 'Europe' AND region = 'Southern Europe'
+    )
+)
+AND countries.code IN (
+    SELECT countrycode FROM countrylanguages 
+    GROUP BY countrycode 
+    HAVING COUNT(*) = 1 AND MAX(percentage) = 100
+);
+
 
 -- Clue #4: We're booking the first flight out – maybe we've actually got a chance to catch her 
 -- this time. There are only two cities she could be flying to in the country. One is named the 
